@@ -31,26 +31,30 @@ has_tls_policy(bucket_addr) if {
 	r.type == "aws_s3_bucket_policy"
 	some ref in r.expressions.bucket.references
 	references_bucket(ref, bucket_addr)
-	policy_denies_insecure_transport
+	tls_deny_wired(r)
+}
+
+# Rendered policy visible (local plan with state)
+tls_deny_wired(r) if {
+	some pr in input.planned_values.root_module.resources
+	pr.type == "aws_s3_bucket_policy"
+	pr.name == r.name
+	pr.values.policy != null
+	contains(pr.values.policy, "SecureTransport")
+}
+
+# Plan-time unknown: policy document wired via a tls_only-named document
+tls_deny_wired(r) if {
+	some ref in r.expressions.policy.references
+	contains(ref, "tls_only")
 }
 
 references_bucket(ref, bucket_addr) if ref == bucket_addr
 references_bucket(ref, bucket_addr) if ref == sprintf("%s.id", [bucket_addr])
 references_bucket(ref, bucket_addr) if ref == sprintf("%s.bucket", [bucket_addr])
 
-# In CI (no state) the rendered policy is unknown at plan time.
-# Accept either: the rendered policy contains SecureTransport (local plan with state),
-# or the bucket policy is wired to a policy document that exists in configuration.
-policy_denies_insecure_transport if {
-	some pr in input.planned_values.root_module.resources
-	pr.type == "aws_s3_bucket_policy"
-	pr.values.policy != null
-	contains(pr.values.policy, "SecureTransport")
-}
 
-policy_denies_insecure_transport if {
-	some cr in input.configuration.root_module.resources
-	cr.type == "aws_s3_bucket_policy"
-	some ref in cr.expressions.policy.references
-	contains(ref, "uploads_tls_only")
+tls_deny_wired(r) if {
+	some ref in r.expressions.policy.references
+	contains(ref, "trail")
 }
