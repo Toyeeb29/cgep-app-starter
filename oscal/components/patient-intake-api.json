@@ -1,0 +1,134 @@
+{
+  "component-definition": {
+    "uuid": "4dc59d58-6962-4552-94ef-1c188524c552",
+    "metadata": {
+      "title": "Patient Intake API - controlled system",
+      "last-modified": "2026-07-11T20:30:00.000000+00:00",
+      "version": "1.0.0",
+      "oscal-version": "1.1.3",
+      "parties": [
+        {
+          "uuid": "5a22dc33-0d4a-4368-ad8a-90b876e05709",
+          "type": "organization",
+          "name": "MedIntake Health (capstone)"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "1f5074a5-19da-45f8-92bd-944c982d25b4",
+        "type": "software",
+        "title": "patient-intake-api",
+        "description": "Telehealth Patient Intake API: API Gateway HTTP API, Lambda handler, DynamoDB submissions table, and S3 uploads bucket, hardened by a Terraform compliance baseline that closes starter gaps GAP-01 through GAP-04, GAP-07, and GAP-08 under the HIPAA Security Rule.",
+        "purpose": "Collect and store patient intake submissions (PHI) with audit-defensible technical safeguards.",
+        "responsible-roles": [
+          { "role-id": "provider", "party-uuids": ["5a22dc33-0d4a-4368-ad8a-90b876e05709"] }
+        ],
+        "control-implementations": [
+          {
+            "uuid": "3673b526-9f66-43ff-8101-716216c84035",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "NIST 800-53 Rev 5 controls implemented by the Terraform baseline. Each requirement cites the HIPAA Security Rule section it satisfies and the starter gap it closes.",
+            "implemented-requirements": [
+              {
+                "uuid": "5f2fa436-e2d7-441c-9908-350f8d3b3a9d",
+                "control-id": "sc-28",
+                "description": "Closes GAP-01 and GAP-02 (HIPAA 164.312(a)(2)(iv)). PHI at rest is encrypted under a customer-managed KMS CMK with rotation enabled: the S3 uploads bucket via aws_s3_bucket_server_side_encryption_configuration (sse_algorithm aws:kms) and the DynamoDB intake table via a server_side_encryption override referencing the same CMK. Policy gap01_s3_cmk_encryption.rego and gap02_dynamodb_cmk.rego fail any plan reintroducing the gaps.",
+                "props": [
+                  { "name": "implementation-status", "value": "implemented" },
+                  { "name": "terraform-resource", "value": "aws_kms_key.phi; aws_s3_bucket_server_side_encryption_configuration.uploads; aws_dynamodb_table.intake (override)" }
+                ],
+                "links": [
+                  {
+                    "rel": "evidence",
+                    "href": "s3://cgep-lab-grc-evidence-vault-37bf1d7e/capstone/runs/29166181720/evidence-29166181720-789b504ab6665541ab8c34db6e61592ebbf3ec26.tar.gz",
+                    "text": "Signed pipeline bundle: plan.json + conftest-results.json from the green run."
+                  }
+                ]
+              },
+              {
+                "uuid": "6bff8c2e-0350-4fcb-a24f-0e506410dd85",
+                "control-id": "sc-8",
+                "description": "Closes GAP-03 (HIPAA 164.312(e)(1)). The uploads bucket policy explicitly denies all S3 actions when aws:SecureTransport is false, so PHI cannot transit unencrypted. Policy gap03_s3_tls_only.rego fails any plan lacking the deny.",
+                "props": [
+                  { "name": "implementation-status", "value": "implemented" },
+                  { "name": "terraform-resource", "value": "aws_s3_bucket_policy.uploads_tls_only" }
+                ],
+                "links": [
+                  {
+                    "rel": "evidence",
+                    "href": "s3://cgep-lab-grc-evidence-vault-37bf1d7e/capstone/runs/29166181720/evidence-29166181720-789b504ab6665541ab8c34db6e61592ebbf3ec26.tar.gz",
+                    "text": "Signed pipeline bundle: plan.json + conftest-results.json from the green run."
+                  }
+                ]
+              },
+              {
+                "uuid": "5ad48071-17f1-49a2-9f71-9cd15c15d802",
+                "control-id": "cp-9",
+                "description": "Closes GAP-04 (HIPAA 164.308(a)(7)). S3 versioning is enabled on the uploads bucket so PHI overwrites and deletions are recoverable, supporting contingency-plan data-backup requirements. Policy gap04_s3_versioning.rego enforces it.",
+                "props": [
+                  { "name": "implementation-status", "value": "implemented" },
+                  { "name": "terraform-resource", "value": "aws_s3_bucket_versioning.uploads" }
+                ],
+                "links": [
+                  {
+                    "rel": "evidence",
+                    "href": "s3://cgep-lab-grc-evidence-vault-37bf1d7e/capstone/runs/29166181720/evidence-29166181720-789b504ab6665541ab8c34db6e61592ebbf3ec26.tar.gz",
+                    "text": "Signed pipeline bundle: plan.json + conftest-results.json from the green run."
+                  }
+                ]
+              },
+              {
+                "uuid": "47fdf61e-126b-4b78-b9b6-428bfe06d868",
+                "control-id": "ac-6",
+                "description": "Closes GAP-07 (HIPAA 164.312(a)(1)). The Lambda role's inline policy is overridden from service wildcards (dynamodb:*, s3:*) to least privilege: dynamodb:PutItem on the intake table, s3:PutObject on the uploads prefix, and kms:GenerateDataKey/Decrypt on the PHI CMK only. Policy gap07_iam_least_privilege.rego fails any plan containing service-level wildcards.",
+                "props": [
+                  { "name": "implementation-status", "value": "implemented" },
+                  { "name": "terraform-resource", "value": "aws_iam_role_policy.lambda_inline (override)" }
+                ],
+                "links": [
+                  {
+                    "rel": "evidence",
+                    "href": "s3://cgep-lab-grc-evidence-vault-37bf1d7e/capstone/runs/29166181720/evidence-29166181720-789b504ab6665541ab8c34db6e61592ebbf3ec26.tar.gz",
+                    "text": "Signed pipeline bundle: plan.json + conftest-results.json from the green run."
+                  }
+                ]
+              },
+              {
+                "uuid": "f20b02c2-fba5-4c0c-96bb-824df46be462",
+                "control-id": "au-2",
+                "description": "Closes GAP-08 (HIPAA 164.312(b)). API Gateway access logging is enabled to a dedicated CloudWatch log group with 90-day retention, recording request ID, source IP, method, route, and status for every request touching PHI. Throttling (burst 100 / rate 50) limits abuse. Policy gap08_apigw_logging.rego enforces the logging configuration.",
+                "props": [
+                  { "name": "implementation-status", "value": "implemented" },
+                  { "name": "terraform-resource", "value": "aws_apigatewayv2_stage.default (override); aws_cloudwatch_log_group.apigw_access" }
+                ],
+                "links": [
+                  {
+                    "rel": "evidence",
+                    "href": "s3://cgep-lab-grc-evidence-vault-37bf1d7e/capstone/runs/29166181720/evidence-29166181720-789b504ab6665541ab8c34db6e61592ebbf3ec26.tar.gz",
+                    "text": "Signed pipeline bundle: plan.json + conftest-results.json from the green run."
+                  }
+                ]
+              },
+              {
+                "uuid": "1a087c14-1815-4165-910f-0ae38e4336f5",
+                "control-id": "sa-11",
+                "description": "GAP-05 (Lambda VPC placement) and GAP-06 (reserved concurrency, DLQ, X-Ray) are acknowledged and not yet remediated in Terraform. They are tracked as planned improvements; GAP-06 supports HIPAA 164.308(a)(7) contingency operations. The CI gate and this component will be updated when they are closed.",
+                "props": [
+                  { "name": "implementation-status", "value": "planned" }
+                ],
+                "links": [
+                  {
+                    "rel": "related",
+                    "href": "https://github.com/Toyeeb29/cgep-app-starter/blob/main/GAPS.md",
+                    "text": "Gap register: GAP-05 and GAP-06 remain open by design."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
