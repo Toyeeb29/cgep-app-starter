@@ -2,6 +2,27 @@
 
 > Patient Intake API for "Acme Health". The deliberately-flawed workload your **CGE-P capstone** wraps with GRC controls.
 
+## Grader verification (5 minutes)
+
+This fork is a completed capstone submission (framework: **HIPAA Security Rule** — see `WRITEUP.md`).
+
+1. **Policies fail closed:** `opa test ./policies` → 12/12 pass. Re-introduce any
+   gap (e.g. delete `terraform/baseline_s3.tf`), regenerate the plan
+   (`terraform plan -out=tfplan && terraform show -json tfplan > plan.json`),
+   then `conftest test --policy policies --all-namespaces terraform/plan.json`
+   → fails with the gap ID and HIPAA section in the message.
+2. **Two-PR demo:** PR #1 (green, merged) and PR #2 (red, blocked, left open) —
+   see the Actions history for the passing and failing gate runs.
+3. **Chain of custody:** signed bundle at
+   `s3://cgep-lab-grc-evidence-vault-37bf1d7e/capstone/runs/29166181720/`
+   (Cosign sig bundle + SHA-256 sidecar). Verify:
+   `cosign verify-blob --bundle <bundle>.sig.bundle --certificate-identity-regexp '.*' --certificate-oidc-issuer https://token.actions.githubusercontent.com <bundle>`
+4. **OSCAL:** `oscal/components/patient-intake-api.json` (trestle-validated) maps
+   each closed gap → NIST control → HIPAA section → Terraform resource → evidence link.
+5. **Narrative:** `WRITEUP.md` covers framework choice, remediation, trade-offs,
+   and what was deliberately left as planned (GAP-05/06).
+
+
 ## What this is
 
 A minimal AWS workload: VPC, Lambda, API Gateway, DynamoDB, S3. It ingests patient intake submissions over HTTPS. Think of it as a system you have just inherited from an engineering team and been asked to make audit-defensible.

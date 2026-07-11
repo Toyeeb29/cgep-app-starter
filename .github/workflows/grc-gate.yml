@@ -64,7 +64,11 @@ jobs:
           print(f"conftest failures: {fails}")
           sys.exit(0 if fails == 0 else 1)
           '
-
+      - name: Terraform apply (main only, after gate passes)
+        if: github.ref == 'refs/heads/main'
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform apply -auto-approve tfplan
+        
       - name: Copy plan into evidence
         if: always()
         run: |
