@@ -1,0 +1,1 @@
+VALID: Model C:\Users\atand\cgep-labs\oscal\component-definitions\patient-intake-api\component-definition.json passed the Validator to confirm the model passes all registered validation tests.
