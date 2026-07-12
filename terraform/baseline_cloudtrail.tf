@@ -44,7 +44,7 @@ data "aws_iam_policy_document" "trail" {
       values   = ["false"]
     }
   }
-  
+
   statement {
     sid       = "AWSCloudTrailWrite"
     effect    = "Allow"
