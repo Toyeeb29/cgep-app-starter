@@ -59,12 +59,11 @@ runs most worth investigating always leave signed evidence.
 ## The two-PR demonstration
 
 - **Green PR (merged):** https://github.com/Toyeeb29/cgep-app-starter/pull/1
-  — controls in place, `conftest failures: 0`, evidence signed and vaulted at
-  `s3://cgep-lab-grc-evidence-vault-37bf1d7e/capstone/runs/29166181720/`.
+  — controls in place, gate passed (run 29203520473), evidence signed and vaulted at
+  `s3://cgep-lab-grc-evidence-vault-37bf1d7e/capstone/runs/29203520473/`.
 - **Red PR (blocked, left open):** https://github.com/Toyeeb29/cgep-app-starter/pull/2
-  — deliberately removes the S3 hardening; the gate detects GAP-01/03/04 and
-  fails the build. The merge is blocked. The failed run still produced a
-  signed bundle.
+  — deliberately removes the S3 hardening; the gate detects GAP-01/03/04 and fails
+  the build (run 29203574364).
 
 ## How to verify (grader path)
 
@@ -84,3 +83,16 @@ VPC endpoint for DynamoDB/S3; close GAP-06 with reserved concurrency, a DLQ,
 and X-Ray; add a WAF to the API edge; and promote the Data Access-style audit
 logging into a continuous-monitoring feed (the Lab 5.2 pattern) so evidence
 generation isn't PR-bound.
+
+## Changes since attempt 1
+
+Attempt 1 failed on secrets detection: a live AWS access key had been captured
+in a committed `terraform/plan.json` and persisted in a GitHub PR ref. Response:
+the key was rotated and deleted within the hour, plan artifacts were purged from
+history and gitignored, and the repository was rebuilt clean (verified via
+mirror-clone scans with gitleaks and TruffleHog --only-verified: zero findings).
+Additional improvements: LICENSE added, terraform fmt applied, and real-time
+drift detection added (`terraform/monitoring.tf`) — EventBridge detects S3
+public-access-block changes via CloudTrail and a least-privilege Lambda
+auto-remediates within seconds, closing the monitoring gap from attempt 1's
+feedback.
