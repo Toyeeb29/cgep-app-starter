@@ -5,6 +5,8 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1'   # weekly evidence run — scheduled collection, not just PR-bound
 
 permissions:
   id-token: write       # AWS OIDC + Cosign keyless
@@ -68,7 +70,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform apply -auto-approve tfplan
-        
+
       - name: Copy plan into evidence
         if: always()
         run: |
